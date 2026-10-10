@@ -53,7 +53,7 @@ const testActivites = {
     { id: 3, nom: 'SenTech', societe: 'SenTech' },
   ],
   users: [
-    { id: 1, nom: 'Fatou Ndiaye' },
+    { id: 1, nom: 'Fatou Awa' },
   ],
 }
 

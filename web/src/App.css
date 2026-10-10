@@ -669,9 +669,18 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	font-size: 13px;
 }
 
-.activites-filter select {
+.activites-filter {
+	position: relative;
+	flex: 0 0 auto;
+}
+
+.activites-filter-trigger {
+	display: flex;
 	min-width: 200px;
 	height: 42px;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
 	padding: 0 14px;
 	color: #273a56;
 	background: #fff;
@@ -679,6 +688,40 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	border-radius: 14px;
 	box-shadow: 0 2px 4px #10213a08;
 	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.activites-filter-menu {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	z-index: 5;
+	display: grid;
+	min-width: 100%;
+	padding: 5px;
+	background: #fff;
+	border: 1px solid #e1e9f2;
+	border-radius: 12px;
+	box-shadow: 0 8px 22px #10213a1a;
+}
+
+.activites-filter-menu button {
+	padding: 9px 10px;
+	color: #273a56;
+	background: transparent;
+	border: 0;
+	border-radius: 8px;
+	font: inherit;
+	text-align: left;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.activites-filter-menu button:hover,
+.activites-filter-menu button.selected {
+	color: #007f76;
+	background: #effbf9;
 }
 
 .activites-list {
@@ -713,11 +756,15 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	border-radius: 15px;
 }
 
-.activite-icon.outgoing {
+.activite-icon.sortant {
 	color: #009c91;
 }
 
-.activite-icon.incoming {
+.activite-icon.entrant {
+	color: #416fe0;
+}
+
+.activite-icon.missed {
 	color: #e54468;
 }
 
@@ -827,7 +874,7 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	.activites-header { align-items: flex-start; }
 	.activites-header h1 { font-size: 21px; }
 	.activites-header p { max-width: 430px; line-height: 1.5; }
-	.activites-filter select { min-width: 175px; }
+	.activites-filter-trigger { min-width: 175px; }
 	.activite-row { gap: 12px; padding-inline: 14px; }
 	.activite-meta { gap: 10px; margin-left: 0; }
 	.activite-result { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
@@ -855,9 +902,10 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 
 @media (max-width: 480px) {
 	.activites-page { padding: 20px 10px; }
-	.activites-header { flex-direction: column; gap: 14px; margin-bottom: 18px; }
+	.activites-header { align-items: stretch; flex-direction: column; gap: 14px; margin-bottom: 18px; }
 	.activites-filter,
-	.activites-filter select { width: 100%; }
+	.activites-filter-trigger { width: 100%; }
+	.activites-filter-menu { right: 0; left: 0; }
 	.activite-row { align-items: flex-start; gap: 10px; padding: 14px 11px; }
 	.activite-icon { width: 40px; height: 40px; border-radius: 13px; }
 	.activite-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
