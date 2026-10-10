@@ -1,60 +1,58 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, Search, UsersRound } from 'lucide-react'
-import { getProspects } from '../api/client.js'
+import {
+  getCommerciaux,
+  getProspects,
+  isProspectsDemoMode,
+} from '../api/prospects.api.js'
 
-function readValue(record, keys) {
-  for (const key of keys) {
-    const value = record?.[key]
-    if (value !== undefined && value !== null && value !== '') return value
-  }
-  return ''
-}
-
-function displayValue(value) {
-  if (typeof value === 'string' || typeof value === 'number') return value
-  if (value && typeof value === 'object') {
-    return value.name || value.nom || value.fullName || value.label || ''
-  }
-  return ''
-}
-
-function getProspectFields(prospect) {
-  return {
-    name: displayValue(readValue(prospect, ['nom', 'name', 'fullName', 'contactName', 'contact'])),
-    phone: displayValue(readValue(prospect, ['telephone', 'phone', 'numeroTelephone', 'mobile'])),
-    company: displayValue(readValue(prospect, ['entreprise', 'company', 'companyName', 'societe'])),
-    city: displayValue(readValue(prospect, ['ville', 'city', 'localisation'])),
-    status: displayValue(readValue(prospect, ['statut', 'status', 'etape'])),
-    owner: displayValue(readValue(prospect, ['commercialAssigne', 'commercial', 'assignedTo', 'owner'])),
-    lastInteraction: displayValue(readValue(prospect, ['derniereInteraction', 'lastInteraction', 'lastContact', 'interaction'])),
-    nextAction: displayValue(readValue(prospect, ['prochaineAction', 'nextAction', 'action'])),
-  }
-}
+const prospectStatuses = [
+  'Nouveau',
+  'À contacter',
+  'Contacté',
+  'Intéressé',
+  'Rendez-vous',
+  'Proposition',
+  'Négociation',
+  'Gagné',
+  'Perdu',
+]
 
 function extractProspects(response) {
   if (Array.isArray(response)) return response
   if (Array.isArray(response?.data)) return response.data
   if (Array.isArray(response?.prospects)) return response.prospects
-  if (Array.isArray(response?.items)) return response.items
   return []
 }
 
-function statusTone(status) {
-  const normalized = String(status).toLowerCase()
-  if (normalized.includes('int')) return 'green'
-  if (normalized.includes('propos')) return 'blue'
-  if (normalized.includes('relanc')) return 'orange'
-  if (normalized.includes('rdv') || normalized.includes('rendez')) return 'cyan'
-  return 'neutral'
+function extractCommerciaux(response) {
+  if (Array.isArray(response)) return response
+  if (Array.isArray(response?.data)) return response.data
+  if (Array.isArray(response?.users)) return response.users
+  return []
+}
+
+function formatDate(value) {
+  if (!value) return '—'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
 }
 
 function ProspectsPage() {
   const [prospects, setProspects] = useState([])
+  const [commerciaux, setCommerciaux] = useState([])
   const [search, setSearch] = useState('')
-  const [ownerFilter, setOwnerFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [commercialFilter, setCommercialFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [commercialError, setCommercialError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -70,26 +68,56 @@ function ProspectsPage() {
         if (active) setLoading(false)
       })
 
+    getCommerciaux()
+      .then((response) => {
+        if (active) setCommerciaux(extractCommerciaux(response))
+      })
+      .catch(() => {
+        if (active) setCommercialError('Impossible de charger la liste des commerciaux.')
+      })
+
     return () => {
       active = false
     }
   }, [])
 
-  const rows = useMemo(() => prospects.map((prospect) => ({
-    source: prospect,
-    ...getProspectFields(prospect),
-  })), [prospects])
+  const commercialOptions = useMemo(
+    () => [...new Map(commerciaux
+      .filter(({ id, nom }) => (id !== undefined && id !== null) || nom)
+      .map((commercial) => {
+        const filterValue = commercial.id !== undefined && commercial.id !== null
+          ? `id:${commercial.id}`
+          : `name:${commercial.nom}`
+        return [
+          filterValue,
+          commercial.nom || `Commercial #${commercial.id}`,
+        ]
+      }))],
+    [commerciaux],
+  )
+  const filteredProspects = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('fr')
 
-  const owners = [...new Set(rows.map((row) => row.owner).filter(Boolean))]
-  const statuses = [...new Set(rows.map((row) => row.status).filter(Boolean))]
-  const filteredRows = rows.filter((row) => {
-    const term = search.trim().toLowerCase()
-    const matchesSearch = !term || [row.name, row.phone, row.company, row.city]
-      .some((value) => String(value).toLowerCase().includes(term))
-    return matchesSearch
-      && (!ownerFilter || row.owner === ownerFilter)
-      && (!statusFilter || row.status === statusFilter)
-  })
+    return prospects.filter((prospect) => {
+      const prospectCommercialFilter = prospect.commercial_id !== undefined && prospect.commercial_id !== null
+        ? `id:${prospect.commercial_id}`
+        : `name:${prospect.commercial_responsable || ''}`
+      const matchesSearch = !term || [
+        prospect.nom,
+        prospect.societe,
+        prospect.telephone,
+        prospect.email,
+        prospect.statut,
+        prospect.origine,
+        prospect.entreprise,
+        prospect.commercial_responsable,
+      ].some((value) => String(value ?? '').toLocaleLowerCase('fr').includes(term))
+
+      return matchesSearch
+        && (!statusFilter || prospect.statut === statusFilter)
+        && (!commercialFilter || prospectCommercialFilter === commercialFilter)
+    })
+  }, [prospects, search, statusFilter, commercialFilter])
 
   return (
     <div className="prospects-page">
@@ -97,10 +125,12 @@ function ProspectsPage() {
         <header className="page-header">
           <div>
             <h1>Prospects du Portefeuille</h1>
-            <p className="page-subtitle">Suivi des comptes et fiches prospects attribuées à l’équipe commerciale</p>
+            <p className="page-subtitle">Suivi des comptes et fiches prospects attribuees à l'équipe commerciale</p>
           </div>
           <div className="result-count" aria-live="polite">
-            {loading ? 'Chargement…' : `${filteredRows.length} prospect${filteredRows.length > 1 ? 's' : ''} affiché${filteredRows.length > 1 ? 's' : ''}`}
+            {loading
+              ? 'Chargement…'
+              : `${filteredProspects.length} prospect${filteredProspects.length > 1 ? 's' : ''} affiché${filteredProspects.length > 1 ? 's' : ''}`}
           </div>
         </header>
 
@@ -109,21 +139,37 @@ function ProspectsPage() {
             <Search size={18} aria-hidden="true" />
             <input
               type="search"
-              placeholder="Rechercher par prospect, entreprise..."
+              placeholder="Rechercher un prospect..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              aria-label="Rechercher un prospect ou une entreprise"
+              aria-label="Rechercher un prospect"
             />
           </label>
-          <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)} aria-label="Filtrer par commercial">
+          <select
+            value={commercialFilter}
+            onChange={(event) => setCommercialFilter(event.target.value)}
+            aria-label="Filtrer par commercial"
+          >
             <option value="">Tous les commerciaux</option>
-            {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
+            {commercialOptions.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
           </select>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filtrer par statut">
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            aria-label="Filtrer par statut"
+          >
             <option value="">Tous les statuts</option>
-            {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+            {prospectStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
         </section>
+
+        {commercialError && <div className="api-error" role="alert"><AlertCircle size={17} />{commercialError}</div>}
+
+        {isProspectsDemoMode && (
+          <div className="api-demo" role="status">
+            Données de démonstration — aucune donnée n’a été enregistrée dans la base.
+          </div>
+        )}
 
         {error && <div className="api-error" role="alert"><AlertCircle size={17} />{error}</div>}
 
@@ -132,31 +178,50 @@ function ProspectsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Contact</th>
-                  <th>Entreprise &amp; ville</th>
+                  <th>Nom</th>
+                  <th>Société</th>
+                  <th>Téléphone</th>
+                  <th>E-mail</th>
                   <th>Statut</th>
-                  <th>Commercial assigné</th>
+                  <th>Origine</th>
+                  <th>Entreprise</th>
+                  <th>Commercial responsable</th>
                   <th>Dernière interaction</th>
                   <th>Prochaine action</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td className="table-message" colSpan="6">Chargement des prospects…</td></tr>
-                ) : filteredRows.length === 0 ? (
+                  <tr><td className="table-message" colSpan="10">Chargement des prospects…</td></tr>
+                ) : filteredProspects.length === 0 ? (
                   <tr>
-                    <td className="table-message" colSpan="6">
-                      {error ? <><AlertCircle size={20} /><strong>Les données ne sont pas disponibles</strong><p>Vérifiez la connexion à l’API puis réessayez.</p></> : <><UsersRound size={20} /><strong>Aucun prospect trouvé</strong><p>Modifiez la recherche ou les filtres.</p></>}
+                    <td className="table-message" colSpan="10">
+                      {error
+                        ? <><AlertCircle size={20} /><strong>Données indisponibles</strong><p>Vérifiez la connexion à l’API puis réessayez.</p></>
+                        : <><UsersRound size={20} /><strong>Aucun prospect trouvé</strong><p>Modifiez la recherche ou les filtres.</p></>}
                     </td>
                   </tr>
-                ) : filteredRows.map((row, index) => (
-                  <tr key={row.source.id || row.source._id || `${row.name}-${index}`}>
-                    <td><strong>{row.name || '—'}</strong><small>{row.phone || ' '}</small></td>
-                    <td><span>{row.company || '—'}</span><small>{row.city || ' '}</small></td>
-                    <td><span className={`status-pill ${statusTone(row.status)}`}>{row.status || '—'}</span></td>
-                    <td><span className="owner-pill"><UsersRound size={14} />{row.owner || '—'}</span></td>
-                    <td><span>{displayValue(row.lastInteraction) || '—'}</span><small>{displayValue(readValue(row.source, ['typeInteraction', 'interactionType', 'canal'])) || ' '}</small></td>
-                    <td><span className="next-action">{row.nextAction || '—'}</span><small>{displayValue(readValue(row.source, ['dateProchaineAction', 'nextActionDate', 'echeance'])) || ' '}</small></td>
+                ) : filteredProspects.map((prospect, index) => (
+                  <tr key={prospect.id ?? index}>
+                    <td><strong>{prospect.nom || '—'}</strong></td>
+                    <td>{prospect.societe || '—'}</td>
+                    <td>{prospect.telephone || '—'}</td>
+                    <td>{prospect.email || '—'}</td>
+                    <td><span className="status-pill neutral">{prospect.statut || '—'}</span></td>
+                    <td>{prospect.origine || '—'}</td>
+                    <td>{prospect.entreprise || (prospect.entreprise_id ? `Entreprise #${prospect.entreprise_id}` : '—')}</td>
+                    <td>
+                      <span className="owner-pill">
+                        <UsersRound size={14} />
+                        {prospect.commercial_responsable
+                          || (prospect.commercial_id ? `Commercial #${prospect.commercial_id}` : '—')}
+                      </span>
+                    </td>
+                    <td>{formatDate(prospect.derniere_interaction)}</td>
+                    <td>
+                      <span className="next-action">{prospect.prochaine_action_type || '—'}</span>
+                      {prospect.prochaine_action_date && <small>{formatDate(prospect.prochaine_action_date)}</small>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
