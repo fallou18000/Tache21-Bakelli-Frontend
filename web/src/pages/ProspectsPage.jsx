@@ -5,6 +5,7 @@ import {
   getProspects,
   isProspectsDemoMode,
 } from '../api/prospects.api.js'
+import FilterDropdown from '../components/FilterDropdown.jsx'
 
 const prospectStatuses = [
   'Nouveau',
@@ -95,6 +96,17 @@ function ProspectsPage() {
       }))],
     [commerciaux],
   )
+  const commercialFilterOptions = useMemo(
+    () => [
+      { value: '', label: 'Tous les commerciaux' },
+      ...commercialOptions.map(([value, label]) => ({ value, label })),
+    ],
+    [commercialOptions],
+  )
+  const statusFilterOptions = [
+    { value: '', label: 'Tous les statuts' },
+    ...prospectStatuses.map((status) => ({ value: status, label: status })),
+  ]
   const filteredProspects = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('fr')
 
@@ -145,22 +157,20 @@ function ProspectsPage() {
               aria-label="Rechercher un prospect"
             />
           </label>
-          <select
+          <FilterDropdown
+            className="prospect-filter-dropdown"
+            options={commercialFilterOptions}
             value={commercialFilter}
-            onChange={(event) => setCommercialFilter(event.target.value)}
-            aria-label="Filtrer par commercial"
-          >
-            <option value="">Tous les commerciaux</option>
-            {commercialOptions.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
-          </select>
-          <select
+            onChange={setCommercialFilter}
+            ariaLabel="Filtrer par commercial"
+          />
+          <FilterDropdown
+            className="prospect-filter-dropdown"
+            options={statusFilterOptions}
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            aria-label="Filtrer par statut"
-          >
-            <option value="">Tous les statuts</option>
-            {prospectStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-          </select>
+            onChange={setStatusFilter}
+            ariaLabel="Filtrer par statut"
+          />
         </section>
 
         {commercialError && <div className="api-error" role="alert"><AlertCircle size={17} />{commercialError}</div>}

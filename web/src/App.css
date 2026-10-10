@@ -82,30 +82,84 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 
 .prospects-page {
 	min-height: 100vh;
+	padding: 29px 28px;
 	background: #f5f8fb;
 }
 
 .prospects-page .workspace {
 	width: 100%;
 	margin-left: 0;
+	padding: 0;
 }
 
 .equipe-page {
 	min-height: 100vh;
+	padding: 29px 28px;
 	background: #f5f8fb;
 }
 
 .equipe-page .workspace {
 	width: 100%;
 	margin-left: 0;
+	padding: 0;
+}
+
+.prospects-page .page-header,
+.equipe-page .page-header {
+	margin-bottom: 28px;
+}
+
+.prospects-page .result-count,
+.equipe-page .result-count {
+	display: flex;
+	min-height: 42px;
+	align-items: center;
+	border-radius: 14px;
+}
+
+.prospects-page .filters {
+	margin-bottom: 20px;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.prospects-page .search-box {
+	height: 42px;
+	color: #273a56;
+	background: #fff;
+	border: 1px solid #e1e9f2;
+	border-radius: 14px;
+	box-shadow: 0 2px 4px #10213a08;
+	font-size: 13px;
+}
+
+.prospects-page .filter-dropdown-trigger {
+	width: 100%;
+	min-width: 0;
+	height: 42px;
+	font-size: 13px;
+}
+
+.prospects-page .filter-dropdown-menu {
+	right: 0;
+	left: 0;
+	z-index: 5;
+}
+
+.prospects-page .search-box:focus-within {
+	border-color: #72c8bf;
+	box-shadow: 0 0 0 3px #009c9112;
 }
 
 .equipe-page-header {
-	margin-bottom: 24px;
+	margin-bottom: 28px;
 }
 
 .equipe-page-header .page-subtitle {
-	margin-top: 6px;
+	margin-top: 5px;
 }
 
 .equipe-cards {
@@ -669,12 +723,12 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	font-size: 13px;
 }
 
-.activites-filter {
+.filter-dropdown {
 	position: relative;
 	flex: 0 0 auto;
 }
 
-.activites-filter-trigger {
+.filter-dropdown-trigger {
 	display: flex;
 	min-width: 200px;
 	height: 42px;
@@ -692,7 +746,17 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	cursor: pointer;
 }
 
-.activites-filter-menu {
+.filter-dropdown-trigger span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.filter-dropdown-trigger svg {
+	flex: 0 0 auto;
+}
+
+.filter-dropdown-menu {
 	position: absolute;
 	top: calc(100% + 6px);
 	right: 0;
@@ -706,7 +770,7 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	box-shadow: 0 8px 22px #10213a1a;
 }
 
-.activites-filter-menu button {
+.filter-dropdown-menu button {
 	padding: 9px 10px;
 	color: #273a56;
 	background: transparent;
@@ -718,8 +782,8 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 	cursor: pointer;
 }
 
-.activites-filter-menu button:hover,
-.activites-filter-menu button.selected {
+.filter-dropdown-menu button:hover,
+.filter-dropdown-menu button.selected {
 	color: #007f76;
 	background: #effbf9;
 }
@@ -871,10 +935,12 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 
 @media (max-width: 760px) {
 	.activites-page { padding: 23px 14px; }
+	.prospects-page, .equipe-page { padding: 23px 14px; }
+	.prospects-page .page-header, .equipe-page .page-header { margin-bottom: 18px; }
 	.activites-header { align-items: flex-start; }
 	.activites-header h1 { font-size: 21px; }
 	.activites-header p { max-width: 430px; line-height: 1.5; }
-	.activites-filter-trigger { min-width: 175px; }
+	.activites-filter .filter-dropdown-trigger { min-width: 175px; }
 	.activite-row { gap: 12px; padding-inline: 14px; }
 	.activite-meta { gap: 10px; margin-left: 0; }
 	.activite-result { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
@@ -902,10 +968,11 @@ td small { display: block; min-height: 15px; margin-top: 2px; color: #8293aa; fo
 
 @media (max-width: 480px) {
 	.activites-page { padding: 20px 10px; }
+	.prospects-page, .equipe-page { padding: 20px 10px; }
 	.activites-header { align-items: stretch; flex-direction: column; gap: 14px; margin-bottom: 18px; }
 	.activites-filter,
-	.activites-filter-trigger { width: 100%; }
-	.activites-filter-menu { right: 0; left: 0; }
+	.activites-filter .filter-dropdown-trigger { width: 100%; }
+	.activites-filter .filter-dropdown-menu { right: 0; left: 0; }
 	.activite-row { align-items: flex-start; gap: 10px; padding: 14px 11px; }
 	.activite-icon { width: 40px; height: 40px; border-radius: 13px; }
 	.activite-heading { align-items: flex-start; flex-direction: column; gap: 3px; }

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Building2, ChevronDown, PhoneIncoming, PhoneOff, PhoneOutgoing } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Building2, PhoneIncoming, PhoneOff, PhoneOutgoing } from 'lucide-react'
 import { getActivites, isActivitesDemoMode } from '../api/activites.api.js'
+import FilterDropdown from '../components/FilterDropdown.jsx'
 
 const callFilters = {
   ALL: 'tous',
@@ -109,10 +110,8 @@ function ActivityRow({ appel, prospects, users }) {
 function ActivitesPage() {
   const [data, setData] = useState({ appels: [], prospects: [], users: [] })
   const [callFilter, setCallFilter] = useState(callFilters.ALL)
-  const [filterOpen, setFilterOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const filterRef = useRef(null)
 
   useEffect(() => {
     let active = true
@@ -133,26 +132,6 @@ function ActivitesPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!filterOpen) return undefined
-
-    function closeOnOutsideClick(event) {
-      if (!filterRef.current?.contains(event.target)) setFilterOpen(false)
-    }
-
-    function closeOnEscape(event) {
-      if (event.key === 'Escape') setFilterOpen(false)
-    }
-
-    document.addEventListener('pointerdown', closeOnOutsideClick)
-    document.addEventListener('keydown', closeOnEscape)
-
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsideClick)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [filterOpen])
-
   const appels = useMemo(() => data.appels
     .filter((appel) => matchesFilter(appel, callFilter))
     .sort((left, right) => new Date(right.date_heure) - new Date(left.date_heure)),
@@ -165,36 +144,13 @@ function ActivitesPage() {
           <h1>Flux des Activités Commerciales</h1>
           <p>Journal consolidé en temps réel des interactions téléphoniques qualifiées</p>
         </div>
-        <div className="activites-filter" ref={filterRef}>
-          <button
-            className="activites-filter-trigger"
-            type="button"
-            aria-label="Filtrer par type d’appel"
-            aria-expanded={filterOpen}
-            onClick={() => setFilterOpen((open) => !open)}
-          >
-            {callFilterOptions.find(({ value }) => value === callFilter)?.label}
-            <ChevronDown size={16} aria-hidden="true" />
-          </button>
-          {filterOpen && (
-            <div className="activites-filter-menu">
-              {callFilterOptions.map(({ value, label }) => (
-                <button
-                  className={callFilter === value ? 'selected' : ''}
-                  key={value}
-                  type="button"
-                  aria-pressed={callFilter === value}
-                  onClick={() => {
-                    setCallFilter(value)
-                    setFilterOpen(false)
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <FilterDropdown
+          className="activites-filter"
+          options={callFilterOptions}
+          value={callFilter}
+          onChange={setCallFilter}
+          ariaLabel="Filtrer par type d’appel"
+        />
       </header>
 
       {isActivitesDemoMode && (
