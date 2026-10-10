@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
+import ActivitesPage from './pages/ActivitesPage.jsx'
 import EquipePage from './pages/EquipePage.jsx'
 import ProspectsPage from './pages/ProspectsPage.jsx'
 
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/prospects" replace />} />
         <Route path="/prospects" element={<ProspectsPage />} />
+        <Route path="/activites" element={<ActivitesPage />} />
         <Route path="/equipe/:memberId" element={<EquipePage />} />
         <Route path="/equipe" element={<EquipePage />} />
       </Routes>
